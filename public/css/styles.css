@@ -1,0 +1,284 @@
+.m-top {
+  margin-top: 50px;
+}
+
+.form-top {
+  margin-top: 20px;
+}
+
+#search_symbol {
+  background-color: white;
+  border-width: 0;
+}
+
+.back-button {
+  text-decoration: none;
+}
+
+.request-icon {
+  width: 40px;
+  height: 40px;
+}
+
+.back-icon {
+  width: 40px;
+  height: 40px;
+  color: #1e3a8a;
+  position: absolute;
+  top: 50px;
+  right: 50px;
+  filter: opacity(0.5) drop-shadow(0 0 0 blue);
+}
+
+.adobe {
+  font-size: 10px;
+  padding-top: 40px;
+}
+
+.card-shadow {
+  box-shadow: 0px 7px 7px rgb(79, 82, 83);
+}
+
+body {
+  background-color: #eff6ff;
+  color: #1e3a8a;
+}
+
+.center {
+  margin: 0;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  -ms-transform: translate(-50%, -50%);
+  transform: translate(-50%, -50%);
+}
+
+.button {
+  background-color: #1e3a8a;
+  font-size: 20px;
+  padding: 4px;
+  color: white;
+}
+
+html,
+body {
+  overflow-x: hidden;
+}
+#myInput {
+  border: 0px solid #ddd;
+  text-align: center;
+  outline: none;
+}
+
+#search_symbol {
+  color: #1e3a8a;
+}
+
+#rightcol {
+  position: relative;
+}
+
+#myUL {
+  list-style-type: none;
+  padding: 0;
+  margin: 0;
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 250px;
+  z-index: 2;
+  visibility: hidden;
+}
+
+#myUL li a {
+  border: 1px solid #ddd;
+  margin-top: -1px; /* Prevent double borders */
+  background-color: #f6f6f6;
+  text-decoration: none;
+  color: black;
+  padding: 4px;
+  text-align: center;
+  display: block;
+}
+
+#myUL li a:hover:not(.header) {
+  background-color: #eee;
+}
+
+.selectBox {
+  position: relative;
+}
+
+.selectBox select {
+  width: 100%;
+  font-size: 1rem;
+  color: #212529;
+  padding: 0.375rem 0.75rem 0.375rem 0.75rem;
+  border: 1px solid #ced4da;
+  border-radius: 0.25rem;
+}
+
+.overSelect {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 0;
+}
+#dropdown {
+  position: relative;
+  margin: 0rem 0.1rem 0rem 0.1rem;
+}
+
+#checkboxes {
+  overflow: scroll;
+  overflow-x: hidden;
+  max-height: 8em;
+  position: absolute;
+  display: none;
+  border: 1px #dadada solid;
+  background-color: white;
+  border: 1px solid #ced4da;
+  border-radius: 0.25rem;
+}
+
+#checkboxes label {
+  display: block;
+  font-size: 1rem;
+  color: #212529;
+  padding: 0rem 0rem 0rem 0.75rem;
+}
+
+#checkboxes label:hover {
+  background-color: #1e90ff;
+}
+
+#dashboard_logo {
+  padding: 0.5rem 0rem 0.5rem 0rem;
+}
+#headertext {
+  padding: 1rem 0rem 0rem 0rem;
+}
+
+#adminpanelbar {
+  padding: 0.25rem 0rem 0.25rem 0rem;
+}
+
+#logout {
+  color: #1e3a8a;
+  text-decoration: none;
+}
+#logout :hover {
+  color: #1e90ff;
+}
+#account :hover {
+  color: #1e90ff;
+  cursor: pointer;
+}
+#account:hover .card {
+  display: block;
+}
+
+#account {
+  position: relative;
+}
+
+#allrequests {
+  background-color: white;
+  font-size: 12px;
+  text-align: left;
+  font-weight: bold;
+}
+
+.nopadding {
+  padding: 0 !important;
+}
+
+#card {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  display: none;
+}
+
+#adminpanel :hover {
+  cursor: pointer;
+}
+#adminpanel {
+  position: relative;
+}
+#adminpanel:hover #Card {
+  display: block;
+}
+#Card {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  display: none;
+}
+
+.responsive-iframe {
+  height: 100vh;
+  width: 100vw;
+}
+
+#search_highlight :hover {
+  color: #1e90ff;
+  cursor: pointer;
+}
+
+#sheet_search {
+  position: relative;
+}
+
+#search_card {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  display: none;
+}
+
+#sheet_search:hover .card {
+  display: block;
+}
+
+#anjanaba:hover {
+  background-color: #1e90ff;
+  cursor: pointer;
+}
+#chirag:hover {
+  background-color: #1e90ff;
+  cursor: pointer;
+}
+#hanik:hover {
+  background-color: #1e90ff;
+  cursor: pointer;
+}
+#vkjithesh:hover {
+  background-color: #1e90ff;
+  cursor: pointer;
+}
+#mrugesh:hover {
+  background-color: #1e90ff;
+  cursor: pointer;
+}
+#payal:hover {
+  background-color: #1e90ff;
+  cursor: pointer;
+}
+#sanjay:hover {
+  background-color: #1e90ff;
+  cursor: pointer;
+}
+#timir:hover {
+  background-color: #1e90ff;
+  cursor: pointer;
+}
+#vijay:hover {
+  background-color: #1e90ff;
+  cursor: pointer;
+}
+#others:hover {
+  background-color: #1e90ff;
+  cursor: pointer;
+}

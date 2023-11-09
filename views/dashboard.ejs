@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+
+    <!-- External CSS -->
+    <link rel="stylesheet" type='text/css' href="\css\styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+
+    <title>Dashboard</title>
+    <style>
+        .sheet {
+            width: 100vw;
+            height: 100vh;
+        }
+
+        .clickable {
+            cursor: pointer;
+        }
+    </style>
+</head>
+
+<body>
+    <div style="background-color: white;">
+		<div class="row" id="dashboard_header">
+			<div class="col-sm-2 text-center">
+				<img src="\images\logo.png" alt="logo" height="100" width="auto" id="dashboard_logo"> 
+			</div>
+			<div class="col-sm-9 text-center" id="headertext">
+				<h3>Academic Request System</h3>
+				<h4>IIT Gandhinagar</h4>
+			</div>
+			<div class="col-sm-1 text-center"></div>
+		</div>
+	</div>
+
+	<div class='row' id="adminpanelbar">
+		<div class="col-sm-2 text-center" style="margin:auto;" id="adminpanel"><b>Admin Panel</b>
+			<div class="card" style='padding-left: 20px; padding-right: 20px;' id='Card'>
+				<div class='row text-nowrap'>
+					<div class="col-12 nopadding" id="allrequests">
+						<div style="height:5px;font-size:5px;">&nbsp;</div>
+                        <% if (user.email=="helpdesk.academics@iitgn.ac.in" ){ %>
+                        <% sheets.forEach(function(sheet){ %>
+                            <div class="clickable"
+                                onclick="document.getElementById('acad_frame_datasheet').src = '<%= sheet[2] %>'">
+
+                                <%= sheet[1] %>
+                            </div>
+                            <% }) %>
+                            <% } %>    
+					</div>
+					
+				</div>
+			</div>		
+		</div>
+		
+		<div class="col-sm-7">
+			<input type="hidden" class="form-control" value=<%=user.email%> id="emailID" name="emailID"
+			placeholder="abc@iitgn.ac.in *"
+			aria-label="emailID" required>
+		</div>
+
+		<div class="col-sm-1 text-center" style="margin:auto;" id="sheet_search">
+			<div id="search_highlight">
+			<b><i class="fa fa-search" id='searchsymbol'></i>
+			Search</b></div>
+		<div class="card" style='padding-left: 20px; padding-right: 20px;' id='search_card'>
+		   <div class='row text-nowrap' style="color:grey;">
+			Ctrl+F
+		   </div>
+	   </div>			    
+	   </div>
+		
+		<div class="col-sm-1 text-center" style="margin:auto;" id="account"><b>
+			 Account</b>
+		 <div class="card" style='padding-left: 20px; padding-right: 40px;' id='card'>
+			<div class='row text-nowrap'>
+			<div class='col-sm-2 nopadding' style="margin:auto;"><img src= <%= user.picture %> alt="profile photo" style= "width:40px; height:40px; border-radius: 50%;"></div>
+			<div class="col-sm-10" style="margin:auto;">
+			<div class="container nopadding" >
+				<b><%=user.name%></b><br>
+				<%=user.email%>
+			</div>	
+			</div>
+			</div>
+		</div>			    
+		</div>
+
+		 <div class="col-sm-1 text-center" style="margin:auto;">
+			<a href="/logout" id='logout'>
+				<b>Sign Out</b>
+			</a>
+		 </div>	 
+	</div>
+	<div style="background-color: white;">
+	<div class='row text-nowrap'>
+
+        <div class="col-12 nopadding" id="frame">
+            <% if (user.email!="helpdesk.academics@iitgn.ac.in" ){ %>
+                <iframe class="responsive-iframe" id='frame_datasheet' src=<%=sheet %> ></iframe>
+                {%>
+            <% } else{%>
+                <iframe class="responsive-iframe" id='acad_frame_datasheet' src="<%= sheets[0][2] %>"></iframe>
+                <% } %>    
+		</div>
+	</div>
+</div>
+</body>
+</html>

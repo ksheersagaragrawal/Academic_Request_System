@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+
+    <!-- External CSS -->
+    <link rel="stylesheet" type='text/css' href="\css\styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+
+
+    <title>Request Types</title>
+</head>
+
+<body>
+    <div class="container">
+        <br>
+        <div style="background-color: white;">
+            <br>
+            <div class="row">
+                <div class="col-sm-4 text-center">
+                    <img src="\images\logo.png" alt="logo">
+                </div>
+                <div class="col-sm-8 text-center">
+                    <br><br>
+                    <h1>Academic Request System</h1>
+                    <h2>IIT Gandhinagar</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+    <br>
+    <div class="container">
+        <div class="row">
+
+            <div class="col-sm-4 text-center">
+                <div class="row g-3">
+                    <div class="col-sm-2"></div>
+                    <div class="col-sm-8">
+                        <img src=<%=user.picture %> alt="profile photo" style= "width:130px; height:130px;
+                        border-radius: 50%;">
+                    </div>
+                    <div class="col-sm-2"></div>
+                </div>
+                <hr>
+                <div class="row g-3">
+                    <div class="col-sm-2"></div>
+                    <div class="col-sm-8">
+                        <h4>
+                            <%=user.name%>
+                        </h4>
+                        <h5>
+                            <%=user.email%>
+                        </h5>
+                        <a href="/logout" class="btn btn-outline-primary button">
+                            Sign Out
+                        </a>
+                    </div>
+                    <div class="col-sm-2"></div>
+                </div>
+                <hr>
+            </div>
+
+
+            <div class="col-sm-8" id='rightcol'>
+                <br>
+                
+                <h3 class="text-center">Make a Request</h3>
+                <div class="form-control input-group" style="margin:auto; max-width:250px" id="searchbar">
+                    <span class="input-group-text" id="search_symbol"><i class="fa fa-search"></i></span>
+                    <input type="text" class="form-control" id="myInput" onkeyup="myFunction()"
+                        aria-describedby="inputGroupPrepend" placeholder="Search" name="myInput" autocomplete="off">
+
+                </div>
+
+           
+
+                <ul id="myUL">
+                    <li><a href="/bonafide-request">Bonafide Certificate</a></li>
+                    <li><a href="/thesis_sub-request">Certificate for Thesis Submission</a></li>
+                    <li><a href="/course_completion-report">Course Completion Certificate</a></li>
+                    <li><a href="/english_proficiency-request">English Proficiency Certificate</a></li>
+                    <li><a href="/fees_receipt-report">Fees Receipt</a></li>
+                    <li><a href="/grade-report">Grade Request</a></li>
+                    <li><a href="/noc_higherstudies-request">NOC for Higher Studies</a></li>
+                    <li><a href="/pf_grade-request">Pass/Fail Grade Certificate</a></li>
+                    <li><a href="/provisional_nphd-request">Provisional Certificate (Non - Ph.D.)</a></li>
+                    <li><a href="/provisional_phd-request">Provisional Certificate (Ph.D.)</a></li>
+                    <li><a href="/teaching_assistant-report">Teaching Assistant Certificate</a></li>
+                    <li><a href="/thesis_def-request">Thesis Defense Certificate</a></li>
+                    <li><a href="/transcript-request">Transcript</a></li>
+                </ul>
+                <br>
+                <div class="row g-3">
+                    <div class="col-sm-1"></div>
+                    <div class="col-sm-4">
+                        <div class="card">
+                            <div class="card-body text-center">
+                                <h5 class="card-title">Transcript</h5>
+                                <img src="\images\transcript.png" class="request-icon" alt="transcript request">
+                                <br>
+                                <br>
+                                <a href="/transcript-request" class="btn btn-outline-primary button">Submit</a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-sm-2"></div>
+                    <div class="col-sm-4">
+                        <div class="card">
+                            <div class="card-body text-center">
+                                <h5 class="card-title">Grade Request</h5>
+                                <img src="\images\grade.jpg" class="request-icon" alt="grade-request">
+                                <br>
+                                <br>
+                                <a href="/grade-report" class="btn btn-outline-primary button">Submit</a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-sm-1"></div>
+                </div>
+            </div>
+        </div>
+        <br>
+        <div class="row">
+            <div class="col-sm-4">
+                <div class="row g-3">
+                    <div class="col-sm-2"></div>
+                    <div class="col-sm-8">
+                        <div class="card">
+                            <div class="card-body text-center">
+                                <h5 class="card-title">English Proficiency Certificate</h5>
+                                <img src="\images\english-proficiency.png" alt="english-proficiency" class="request-icon">
+                                <br>
+                                <br>
+                                <a href="/english_proficiency-request" class="btn btn-outline-primary button">Submit</a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-sm-2"></div>
+                </div>
+            </div>
+            <div class="col-sm-8">
+                <div class="row g-3">
+                    <div class="col-sm-1"></div>
+                    <div class="col-sm-4">
+                        <div class="card">
+                            <div class="card-body text-center">
+                                <h5 class="card-title">Bonafide Certificate</h5> <br>
+                                <img src="\images\bonafide.png" alt="bonafide request" class="request-icon">
+                                <br>
+                                <br>
+
+                                <a href="/bonafide-request" class="btn btn-outline-primary button">Submit</a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-sm-2"></div>
+                    <div class="col-sm-4">
+                        <div class="card">
+                            <div class="card-body text-center">
+                                <h5 class="card-title">Certificate for Thesis Submission</h5>
+                                <img src="\images\thesis.png" alt="thesis" class="request-icon">
+                                <br>
+                                <br>
+                                <a href="/thesis_sub-request" class="btn btn-outline-primary button">Submit</a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-sm-1"></div>
+                </div>
+            </div>
+        </div>
+        <br>
+        <div class="row">
+            <div class="col-sm-4">
+                <div class="row g-3">
+                    <div class="col-sm-2"></div>
+                    <div class="col-sm-8">
+                        <div class="card">
+                            <div class="card-body text-center">
+                                <h5 class="card-title">Course Completion Certificate</h5>
+                                <img src="\images\course_completion.jpg" alt="course_completion" class="request-icon">
+                                <br>
+                                <br>
+                                <a href="/course_completion-report" class="btn btn-outline-primary button">Submit</a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-sm-2"></div>
+                </div>
+            </div>
+            <div class="col-sm-8">
+                <div class="row g-3">
+                    <div class="col-sm-1"></div>
+                    <div class="col-sm-4">
+                        <div class="card">
+                            <div class="card-body text-center">
+                                <h5 class="card-title">Provisional Certificate (Non - Ph.D.)</h5>
+                                <img src="\images\provisional_certificate.png" class="request-icon" alt="" srcset="">
+                                <br>
+                                <br>
+                                <a href="/provisional_nphd-request" class="btn btn-outline-primary button">Submit</a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-sm-2"></div>
+                    <div class="col-sm-4">
+                        <div class="card">
+                            <div class="card-body text-center">
+                                <h5 class="card-title">No Objection Certificate</h5>
+                                <img src="\images\higher_studies.png" alt="higher_studies" class="request-icon">
+                                <br>
+                                <br>
+                                <a href="/noc_higherstudies-request" class="btn btn-outline-primary button">Submit</a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-sm-1"></div>
+                </div>
+            </div>
+        </div>
+        <br>
+        <div class="row">
+            <div class="col-sm-4">
+                <div class="row g-3">
+                    <div class="col-sm-2"></div>
+                    <div class="col-sm-8">
+                        <div class="card">
+                            <div class="card-body text-center">
+                                <h5 class="card-title">Pass/Fail Grade Conversion Certificate</h5>
+                                <img src="\images\pass-fail.png" alt="pass-fail" class="request-icon">
+                                <br>
+                                <br>
+                                <a href="/pf_grade-request" class="btn btn-outline-primary button">Submit</a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-sm-2"></div>
+                </div>
+            </div>
+            <div class="col-sm-8">
+                <div class="row g-3">
+                    <div class="col-sm-1"></div>
+                    <div class="col-sm-4">
+                        <div class="card">
+                            <div class="card-body text-center">
+                                <h5 class="card-title">Teaching Assistant Certificate</h5>
+                                <img src="\images\teaching_assistant.png" alt="teaching_assistant" class="request-icon">
+                                <br>
+                                <br>
+                                <a href="/teaching_assistant-report" class="btn btn-outline-primary button">Submit</a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-sm-2"></div>
+                    <div class="col-sm-4">
+                        <div class="card">
+                            <div class="card-body text-center">
+                                <h5 class="card-title">Thesis Defense Certificate</h5>
+                                <img src="\images\thesis-defense.png" alt="thesis-defense" class="request-icon">
+                                <br>
+                                <br>
+
+                                <a href="/thesis_def-request" class="btn btn-outline-primary button">Submit</a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-sm-1"></div>
+                </div>
+            </div>
+        </div>
+        <br>
+        <div class="row">
+            <div class="col-sm-4">
+                <div class="row g-3">
+                    <div class="col-sm-2"></div>
+                    <div class="col-sm-8">
+                        <div class="card">
+                            <div class="card-body text-center">
+                                <h5 class="card-title">Fees Receipt</h5>
+                                <img src="\images\fees.png" alt="fee-receipt" class="request-icon">
+                                <br>
+
+                                <br>
+                                <a href="/fees_receipt-report" class="btn btn-outline-primary button">Submit</a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-sm-2"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <br>
+    <p class="text-end adobe">Icons by Adobe Stock</p>
+    <script src="\js\search.js"></script>
+</body>
+
+</html>

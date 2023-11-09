@@ -1,0 +1,68 @@
+<form name="form7" id="form7" action="" method="POST">
+    <div class="row g-3 form-top">
+        <div class="col-sm-4">
+            <input type="text" class="form-control" id="userName" name="userName" placeholder="Name *"
+                aria-label="userName" required>
+        </div>
+        <div class="col-sm-4">
+            <input type="text" class="form-control" placeholder="Roll Number *" id="rollNumber" name="rollNumber"
+                aria-label="rollNumber" maxlength="8" autocomplete="off" required />
+            <div class="row">
+                <div class="col-sm-6"><p style="color: red;" id="roll"></p></div>
+                <div class="col-sm-6"><p style="color: red;" id="year"></p></div>
+            </div>
+        </div>
+        <div class="col-sm">
+            <input type="text" class="form-control" id="phoneNumber" name="phoneNumber" placeholder="Mobile Number *"
+                aria-label="phoneNumber" maxlength="10" autocomplete="off" required />
+            <p style="color: red;" id="phone"></p>
+        </div>
+    </div>
+    <div class="row g-3 form-top">
+        <div class="col-sm-4">
+            <select class="form-select" id="programme" name="programme" aria-label="Programme" required>
+                <option value="" selected>Choose Programme *</option>
+            </select>
+        </div>
+        <div class="col-sm-4">
+            <select class="form-select" aria-label="discipline" name="discipline" id="discipline" required>
+                <option value="" selected>Choose Discipline (Choose Programme First) *</option>
+            </select>
+        </div>
+        <div class="col-sm-4">
+            <select class="form-select" aria-label="Batch" name="batch" id="batch">
+                <option value="">Select Batch *(Current Programme)</option>
+                <option value="2013">2013</option>
+                <option value="2014">2014</option>
+                <option value="2015">2015</option>
+                <option value="2016">2016</option>
+                <option value="2017">2017</option>
+                <option value="2018">2018</option>
+                <option value="2019">2019</option>
+                <option value="2020">2020</option>
+                <option value="2021">2021</option>
+                <option value="2020">2022</option>
+                <option value="2021">2023</option>
+            </select>
+        </div>
+        
+    </div>
+    <div class="row g-3 form-top">
+        <div class="col-sm-4">
+            <input placeholder="Thesis Defense Date" class="form-control" type="text" onfocus="(this.type='date')" id="defense_date" name="defense_date"  min="2008-01-01">
+        </div>
+        <div class="col-sm-8">
+            <textarea class="form-control" id="exampleFormControlTextarea1" rows="3" id="message" name="message"
+                placeholder="Message (if any)"></textarea>
+        </div>
+    </div>
+    <div class="col-sm-4">
+        <input type="hidden" class="form-control" value=<%=user.email%> id="emailID" name="emailID"
+        placeholder="abc@iitgn.ac.in *"
+        aria-label="emailID" required>
+    </div>
+    <br>
+    <div class="d-grid gap-2 col-6 mx-auto">
+        <button class="btn btn-outline-primary button" id="submit" type="submit">Submit Request</button>
+    </div>
+</form>
