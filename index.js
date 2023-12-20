@@ -10,7 +10,7 @@ const cookieParser = require('cookie-parser');
 
 // Google Auth
 const { OAuth2Client } = require('google-auth-library');
-const CLIENT_ID = "#########.apps.googleusercontent.com";
+const CLIENT_ID = process.env.CLIENT_ID; 
 const client = new OAuth2Client(CLIENT_ID);
 
 const app = express();
@@ -29,10 +29,112 @@ app.get("/", function (req, res) {
     res.render("login");
 })
 
+app.post('/login', (req, res) => {
+    let token = req.body.token;
+
+    async function verify() {
+        const ticket = await client.verifyIdToken({
+            idToken: token,
+            audience: CLIENT_ID,  // Specify the CLIENT_ID of the app that accesses the backend
+        });
+        const payload = ticket.getPayload();
+        const userid = payload['sub'];
+    }
+    verify()
+        .then(() => {
+            res.cookie('session-token', token);
+            res.send('success')
+        })
+        .catch(console.error);
+
+});
+
+// get request
+app.get('/request', checkAuthenticated, async (req, res) => {
+    let user = req.user;
+
+    const auth = new google.auth.GoogleAuth({
+        keyFile: "credentials2.json",
+        scopes: "https://www.googleapis.com/auth/spreadsheets",
+    });
+
+    // client instance for authentication
+    const client = await auth.getClient();
+
+    // instance of google sheets api
+    const googleSheets = google.sheets({
+        version: "v4", auth: client
+    });
+
+    const mappingSheetId = process.env.MAPPING_SHEET;
+    const getNewRows = await googleSheets.spreadsheets.values.get({
+        auth, spreadsheetId: mappingSheetId, range: "Sheet1!P:R",
+    });
+
+    console.log(user.email);
+
+    var showDashboard = false;
+    if (user.email == process.env.EMAIL_ID) {
+        // console.log("here");
+        showDashboard = true;
+        var sheets = getNewRows.data.values;
+        sheets.shift();
+        sheets.shift();
+        console.log(sheets)
+        res.render("dashboard", { user: user, sheets: sheets });
+    } else {
+        for (var i = 0; i < getNewRows.data.values.length; i++) {
+            if (getNewRows.data.values[i][0] == user.email) {
+                showDashboard = true;
+                res.render("dashboard", { user: user, sheet: getNewRows.data.values[i][2] });
+                break
+            }
+        }
+    }
+
+    if (user.email.includes("@iitgn.ac.in") && showDashboard == false) {
+        res.render("request_types", { user: user });
+    }
+    else if (showDashboard == false) {
+        // console.log("in else");
+        res.render("incorrect_email");
+    }
+});
+
+// check if user is authenticated
+function checkAuthenticated(req, res, next) {
+
+    let token = req.cookies['session-token'];
+
+    let user = {};
+    async function verify() {
+        const ticket = await client.verifyIdToken({
+            idToken: token,
+            audience: CLIENT_ID,  // Specify the CLIENT_ID of the app that accesses the backend
+        });
+        const payload = ticket.getPayload();
+        user.name = payload.name;
+        user.email = payload.email;
+        user.picture = payload.picture;
+    }
+    verify()
+        .then(() => {
+            console.log('success')
+            req.user = user;
+            next();
+        })
+        .catch(err => {
+            console.log('error')
+            res.redirect('/')
+        })
+
+}
+
+//Grade Report
 app.post("/grade-report", async function (req, res) {
     const { userName, rollNumber, phoneNumber, batch, programme, discipline, semester, message, emailID } = req.body;
     const auth = new google.auth.GoogleAuth({
-        keyFile: "credentials.json",
+        keyFile: "credentials2.json",
         scopes: "https://www.googleapis.com/auth/spreadsheets",
     });
 
@@ -66,6 +168,7 @@ app.post("/grade-report", async function (req, res) {
     var token = `${year}-GR-${totalGradeRequests + 1}`;
     var reciever;
     var spreadsheetId;
+    var handlerName;
 
     const mappingSheetId = process.env.MAPPING_SHEET;
 
@@ -78,6 +181,7 @@ app.post("/grade-report", async function (req, res) {
         if ((batch == (getNewRows.data.values[i][0])) && (programme == (getNewRows.data.values[i][1]))) {
             reciever = (getNewRows.data.values[i][2]);
             spreadsheetId = (getNewRows.data.values[i][4]);
+            handlerName = (getNewRows.data.values[i][3]);
             break
         }
         else {
@@ -92,10 +196,10 @@ app.post("/grade-report", async function (req, res) {
     await googleSheets.spreadsheets.values.append({
         auth,
         spreadsheetId: spreadsheetId,
-        range: "Sheet1!A:L",
+        range: `${handlerName}!A:L`,
         valueInputOption: "USER_ENTERED",
         resource: {
-            values: [[userName, rollNumber, batch, "Grade Report", token, message, "Pending", currentDate + " | " + time, , semester, emailID, phoneNumber, programme, discipline]],
+            values: [[userName,semester, batch, emailID, phoneNumber, programme, discipline, "Grade Report", rollNumber,,,,,message, token, "Pending", currentDate + " | " + time,reciever]],
         },
     });
 
@@ -105,7 +209,7 @@ app.post("/grade-report", async function (req, res) {
         range: "Sheet1!A:L",
         valueInputOption: "USER_ENTERED",
         resource: {
-            values: [[userName, rollNumber, batch, "Grade Report", token, message, "Pending", currentDate + " | " + time, , semester, emailID, phoneNumber, programme, discipline]],
+            values: [[userName,semester, batch, emailID, phoneNumber, programme, discipline, "Grade Report", rollNumber,,,,,message, token, "Pending", currentDate + " | " + time,reciever]],
         },
     });
 
@@ -120,7 +224,7 @@ app.post("/grade-report", async function (req, res) {
 
 
         var mailOptions2 = {
-            from: "Academic Office<helpdesk.academics@iitgn.ac.in>",
+            from: "Academic Office<admin email id>",
             to: emailID,
             cc: process.env.EMAIL_ID,
             subject: `(${token}) Submitted Grade Request`,
@@ -144,45 +248,23 @@ app.post("/grade-report", async function (req, res) {
 });
 
 //Transcript
-app.post('/login', (req, res) => {
-    let token = req.body.token;
-
-    async function verify() {
-        const ticket = await client.verifyIdToken({
-            idToken: token,
-            audience: CLIENT_ID,  // Specify the CLIENT_ID of the app that accesses the backend
-        });
-        const payload = ticket.getPayload();
-        const userid = payload['sub'];
-    }
-    verify()
-        .then(() => {
-            res.cookie('session-token', token);
-            res.send('success')
-        })
-        .catch(console.error);
-
-});
-
 app.post("/transcript-request", async function (req, res) {
+    
     const { userName, emailID, phoneNumber, programme, batch, discipline, rollNumber, message } = req.body;
-
     const auth = new google.auth.GoogleAuth({
-        keyFile: "credentials.json",
+        keyFile: "credentials2.json",
         scopes: "https://www.googleapis.com/auth/spreadsheets",
     });
-
+   
     const client = await auth.getClient();
     const googleSheets = google.sheets({
         version: "v4", auth: client
     });
-
     const getDataRows = await googleSheets.spreadsheets.values.get({
         auth,
         spreadsheetId: mainSheet,
         range: "Sheet1",
     });
-
     var d = new Date();
     var year = d.getFullYear();
     var totalDataRows = getDataRows.data.values.length;
@@ -222,10 +304,10 @@ app.post("/transcript-request", async function (req, res) {
     await googleSheets.spreadsheets.values.append({
         auth,
         spreadsheetId,
-        range: "Sheet1!A:L",
+        range: `${handlerName}!A:L`,
         valueInputOption: "USER_ENTERED",
         resource: {
-            values: [[userName, rollNumber, batch, "Transcript Request", token, message, "Pending", currentDate + " | " + time, , , emailID, phoneNumber, programme, discipline]],
+            values: [[userName,, batch, emailID, phoneNumber, programme, discipline, "Transcript Request", rollNumber,,,,,message, token, "Pending", currentDate + " | " + time,reciever]],
         },
     });
 
@@ -235,7 +317,7 @@ app.post("/transcript-request", async function (req, res) {
         range: "Sheet1!A:L",
         valueInputOption: "USER_ENTERED",
         resource: {
-            values: [[userName, rollNumber, batch, "Transcript Request", token, message, "Pending", currentDate + " | " + time, , , emailID, phoneNumber, programme, discipline]],
+            values: [[userName,, batch, emailID, phoneNumber, programme, discipline, "Transcript Request", rollNumber,,,,,message, token, "Pending", currentDate + " | " + time,reciever]],
 
         },
     });
@@ -250,7 +332,7 @@ app.post("/transcript-request", async function (req, res) {
         });
 
         var mailOptions2 = {
-            from: "Academic Office<helpdesk.academics@iitgn.ac.in>",
+            from: "Academic Office<put admin email id>",
             to: emailID,
             cc: process.env.EMAIL_ID,
             bcc: reciever,
@@ -274,31 +356,11 @@ app.post("/transcript-request", async function (req, res) {
 });
 
 //Thesis Submission
-app.post('/login', (req, res) => {
-    let token = req.body.token;
-
-    async function verify() {
-        const ticket = await client.verifyIdToken({
-            idToken: token,
-            audience: CLIENT_ID,  // Specify the CLIENT_ID of the app that accesses the backend
-        });
-        const payload = ticket.getPayload();
-        const userid = payload['sub'];
-    }
-    verify()
-        .then(() => {
-            res.cookie('session-token', token);
-            res.send('success')
-        })
-        .catch(console.error);
-
-});
-
 app.post("/thesis_sub-request", async function (req, res) {
     const { userName, emailID, phoneNumber, programme, discipline, batch, joining_date, thesis_date, rollNumber, message } = req.body;
 
     const auth = new google.auth.GoogleAuth({
-        keyFile: "credentials.json",
+        keyFile: "credentials2.json",
         scopes: "https://www.googleapis.com/auth/spreadsheets",
     });
 
@@ -322,7 +384,8 @@ app.post("/thesis_sub-request", async function (req, res) {
     const getNewRows = await googleSheets.spreadsheets.values.get({
         auth, spreadsheetId: mappingSheetId, range: "Sheet1!L:N",
     });
-
+    
+    handlerName = getNewRows.data.values[1][0];
     reciever = getNewRows.data.values[1][1];
     spreadsheetId = getNewRows.data.values[1][2];
 
@@ -345,10 +408,10 @@ app.post("/thesis_sub-request", async function (req, res) {
     await googleSheets.spreadsheets.values.append({
         auth,
         spreadsheetId,
-        range: "Sheet1!A:L",
+        range: `${handlerName}!A:L`,
         valueInputOption: "USER_ENTERED",
         resource: {
-            values: [[userName, rollNumber, batch, "Thesis Certificate Request", token, message, "Pending", currentDate + " | " + time, , , thesis_date, joining_date, , , , , , , emailID, phoneNumber, programme, discipline]],
+            values: [[userName,, batch, emailID, phoneNumber, programme, discipline, "Thesis Certificate Request", rollNumber,,thesis_date,joining_date,,message, token, "Pending", currentDate + " | " + time,reciever]],
         },
     });
 
@@ -358,7 +421,7 @@ app.post("/thesis_sub-request", async function (req, res) {
         range: "Sheet1!A:L",
         valueInputOption: "USER_ENTERED",
         resource: {
-            values: [[userName, rollNumber, batch, "Thesis Certificate Request", token, message, "Pending", currentDate + " | " + time, , , thesis_date, joining_date, , , , , , , emailID, phoneNumber, programme, discipline]],
+            values: [[userName,, batch, emailID, phoneNumber, programme, discipline, "Thesis Certificate Request", rollNumber,,thesis_date,joining_date,,message, token, "Pending", currentDate + " | " + time,reciever]],
         },
     });
 
@@ -372,7 +435,7 @@ app.post("/thesis_sub-request", async function (req, res) {
         });
 
         var mailOptions2 = {
-            from: "Academic Office<helpdesk.academics@iitgn.ac.in>",
+            from: "Academic Office<admin email id>",
             to: emailID,
             cc: process.env.EMAIL_ID,
             bcc: reciever,
@@ -396,31 +459,11 @@ app.post("/thesis_sub-request", async function (req, res) {
 });
 
 //Internship
-app.post('/login', (req, res) => {
-    let token = req.body.token;
-
-    async function verify() {
-        const ticket = await client.verifyIdToken({
-            idToken: token,
-            audience: CLIENT_ID,  // Specify the CLIENT_ID of the app that accesses the backend
-        });
-        const payload = ticket.getPayload();
-        const userid = payload['sub'];
-    }
-    verify()
-        .then(() => {
-            res.cookie('session-token', token);
-            res.send('success')
-        })
-        .catch(console.error);
-
-});
-
 app.post("/internship-request", async function (req, res) {
     const { userName, emailID, phoneNumber, programme, discipline, batch, interndetails, internship_duration, from_date, to_date, rollNumber, message } = req.body;
 
     const auth = new google.auth.GoogleAuth({
-        keyFile: "credentials.json",
+        keyFile: "credentials2.json",
         scopes: "https://www.googleapis.com/auth/spreadsheets",
     });
 
@@ -434,7 +477,8 @@ app.post("/internship-request", async function (req, res) {
 
     // const spreadsheetId = "1cALhZnVzsgFqGwDtDUBt8fyp7Ju0jhmXdysMAdyRohw";
     var spreadsheetId;
-    var reciever;
+    var reciever;   
+    var handlerName;
 
     const mappingSheetId = process.env.MAPPING_SHEET;
 
@@ -442,6 +486,7 @@ app.post("/internship-request", async function (req, res) {
         auth, spreadsheetId: mappingSheetId, range: "Sheet1!L:N",
     });
 
+    handlerName = getNewRows.data.values[1][0];
     reciever = getNewRows.data.values[1][1];
     spreadsheetId = getNewRows.data.values[1][2];
 
@@ -471,7 +516,7 @@ app.post("/internship-request", async function (req, res) {
     await googleSheets.spreadsheets.values.append({
         auth,
         spreadsheetId,
-        range: "Sheet1!A:L",
+        range: `${handlerName}!A:L`,
         valueInputOption: "USER_ENTERED",
         resource: {
             values: [[userName, , batch, emailID, phoneNumber, programme, discipline, "NOC for Internship", rollNumber, , , , , interndetails, from_date, to_date, internship_duration, message, token, "Pending", currentDate + " | " + time, , reciever]],
@@ -498,7 +543,7 @@ app.post("/internship-request", async function (req, res) {
         });
 
         var mailOptions2 = {
-            from: "Academic Office<helpdesk.academics@iitgn.ac.in>",
+            from: "Academic Office<put admin email id>",
             to: emailID,
             cc: process.env.EMAIL_ID,
             bcc: reciever,
@@ -521,31 +566,11 @@ app.post("/internship-request", async function (req, res) {
     }
 });
 
-app.post('/login', (req, res) => {
-    let token = req.body.token;
-
-    async function verify() {
-        const ticket = await client.verifyIdToken({
-            idToken: token,
-            audience: CLIENT_ID,  // Specify the CLIENT_ID of the app that accesses the backend
-        });
-        const payload = ticket.getPayload();
-        const userid = payload['sub'];
-    }
-    verify()
-        .then(() => {
-            res.cookie('session-token', token);
-            res.send('success')
-        })
-        .catch(console.error);
-
-});
-
 app.post("/thesis_def-request", async function (req, res) {
     const { userName, emailID, phoneNumber, programme, discipline, batch, defense_date, joining_date, thesis_date, rollNumber, message } = req.body;
 
     const auth = new google.auth.GoogleAuth({
-        keyFile: "credentials.json",
+        keyFile: "credentials2.json",
         scopes: "https://www.googleapis.com/auth/spreadsheets",
     });
 
@@ -557,6 +582,7 @@ app.post("/thesis_def-request", async function (req, res) {
         version: "v4", auth: client
     });
 
+    var handlerName;
     var spreadsheetId;
     var reciever;
 
@@ -566,6 +592,7 @@ app.post("/thesis_def-request", async function (req, res) {
         auth, spreadsheetId: mappingSheetId, range: "Sheet1!L:N",
     });
 
+    handlerName = getNewRows.data.values[1][0];
     reciever = getNewRows.data.values[1][1];
     spreadsheetId = getNewRows.data.values[1][2];
 
@@ -599,10 +626,10 @@ app.post("/thesis_def-request", async function (req, res) {
     await googleSheets.spreadsheets.values.append({
         auth,
         spreadsheetId,
-        range: "Sheet1!A:L",
+        range: `${handlerName}!A:L`,
         valueInputOption: "USER_ENTERED",
         resource: {
-            values: [[userName, rollNumber, batch, "Thesis Defense Certificate Request", token, message, "Pending", currentDate + " | " + time, ,defense_date ,thesis_date ,joining_date , , , , , , , emailID, phoneNumber, programme, discipline]],
+            values: [[userName,, batch, emailID, phoneNumber, programme, discipline, "Thesis Defense Certificate Request", rollNumber,defense_date,thesis_date,joining_date,,message, token, "Pending", currentDate + " | " + time,reciever]],
         },
     });
 
@@ -613,7 +640,7 @@ app.post("/thesis_def-request", async function (req, res) {
         valueInputOption: "USER_ENTERED",
         resource: {
             // values: [[userName, , batch, emailID, phoneNumber, programme, discipline, "Thesis Defense Certificate Request", rollNumber, defense_date, thesis_date, joining_date, , , , , , message, token, "Pending", currentDate + " | " + time, , reciever]],
-            values: [[userName, rollNumber, batch, "Thesis Defense Certificate Request", token, message, "Pending", currentDate + " | " + time, ,defense_date ,thesis_date ,joining_date , , , , , , , emailID, phoneNumber, programme, discipline]],
+            values: [[userName,, batch, emailID, phoneNumber, programme, discipline, "Thesis Defense Certificate Request", rollNumber,defense_date,thesis_date,joining_date,,message, token, "Pending", currentDate + " | " + time,reciever]],
         },
     });
 
@@ -627,7 +654,7 @@ app.post("/thesis_def-request", async function (req, res) {
         });
 
         var mailOptions2 = {
-            from: "Academic Office<helpdesk.academics@iitgn.ac.in>",
+            from: "Academic Office<admin email id>",
             to: emailID,
             cc: process.env.EMAIL_ID,
             bcc: reciever,
@@ -650,35 +677,11 @@ app.post("/thesis_def-request", async function (req, res) {
     }
 });
 
-
-
-
-//Bonafide
-app.post('/login', (req, res) => {
-    let token = req.body.token;
-
-    async function verify() {
-        const ticket = await client.verifyIdToken({
-            idToken: token,
-            audience: CLIENT_ID,  // Specify the CLIENT_ID of the app that accesses the backend
-        });
-        const payload = ticket.getPayload();
-        const userid = payload['sub'];
-    }
-    verify()
-        .then(() => {
-            res.cookie('session-token', token);
-            res.send('success')
-        })
-        .catch(console.error);
-
-});
-
 app.post("/bonafide-request", async function (req, res) {
     const { userName, emailID, phoneNumber, programme, batch, discipline, rollNumber, graduation_year, message } = req.body;
 
     const auth = new google.auth.GoogleAuth({
-        keyFile: "credentials.json",
+        keyFile: "credentials2json",
         scopes: "https://www.googleapis.com/auth/spreadsheets",
     });
 
@@ -690,6 +693,7 @@ app.post("/bonafide-request", async function (req, res) {
         version: "v4", auth: client
     });
 
+    var handlerName;
     var spreadsheetId;
     var reciever;
 
@@ -699,6 +703,7 @@ app.post("/bonafide-request", async function (req, res) {
         auth, spreadsheetId: mappingSheetId, range: "Sheet1!L:N",
     });
 
+    handlerName = getNewRows.data.values[1][0];
     reciever = getNewRows.data.values[1][1];
     spreadsheetId = getNewRows.data.values[1][2];
 
@@ -734,11 +739,11 @@ app.post("/bonafide-request", async function (req, res) {
     await googleSheets.spreadsheets.values.append({
         auth,
         spreadsheetId,
-        range: "Sheet1!A:L",
+        range: `${handlerName}!A:L`,
         valueInputOption: "USER_ENTERED",
         resource: {
             // values: [[userName, , batch, emailID, phoneNumber, programme, discipline, "Bonafide Request", rollNumber, , , , graduation_year, , , , , message, token, "Pending", currentDate + " | " + time, , reciever]],
-            values: [[userName, rollNumber, batch, "Bonafide Request", token, message, "Pending", currentDate + " | " + time, , , , , graduation_year, , , , , , emailID, phoneNumber, programme, discipline]],
+            values: [[userName,, batch, emailID, phoneNumber, programme, discipline, "Bonafide Request", rollNumber,,,,graduation_year,message, token, "Pending", currentDate + " | " + time,reciever]],
         },
     });
 
@@ -749,7 +754,7 @@ app.post("/bonafide-request", async function (req, res) {
         valueInputOption: "USER_ENTERED",
         resource: {
             // values: [[userName, , batch, emailID, phoneNumber, programme, discipline, "Bonafide Request", rollNumber, , , , graduation_year, , , , , message, token, "Pending", currentDate + " | " + time, , reciever]],
-            values: [[userName, rollNumber, batch, "Bonafide Request", token, message, "Pending", currentDate + " | " + time, , , , , graduation_year, , , , , , emailID, phoneNumber, programme, discipline]],
+            values: [[userName,, batch, emailID, phoneNumber, programme, discipline, "Bonafide Request", rollNumber,,,,graduation_year,message, token, "Pending", currentDate + " | " + time,reciever]],
         },
     });
 
@@ -764,7 +769,7 @@ app.post("/bonafide-request", async function (req, res) {
 
 
         var mailOptions2 = {
-            from: "Academic Office<helpdesk.academics@iitgn.ac.in>",
+            from: "Academic Office<admin email id>",
             to: emailID,
             cc: process.env.EMAIL_ID,
             bcc: reciever,
@@ -788,31 +793,11 @@ app.post("/bonafide-request", async function (req, res) {
 });
 
 //Pass/Fail Grade Certificate Request
-app.post('/login', (req, res) => {
-    let token = req.body.token;
-
-    async function verify() {
-        const ticket = await client.verifyIdToken({
-            idToken: token,
-            audience: CLIENT_ID,  // Specify the CLIENT_ID of the app that accesses the backend
-        });
-        const payload = ticket.getPayload();
-        const userid = payload['sub'];
-    }
-    verify()
-        .then(() => {
-            res.cookie('session-token', token);
-            res.send('success')
-        })
-        .catch(console.error);
-
-});
-
 app.post("/pf_grade-request", async function (req, res) {
     const { userName, emailID, phoneNumber, programme, discipline, batch, rollNumber, joining_year, graduation_year, message } = req.body;
 
     const auth = new google.auth.GoogleAuth({
-        keyFile: "credentials.json",
+        keyFile: "credentials2.json",
         scopes: "https://www.googleapis.com/auth/spreadsheets",
     });
 
@@ -826,6 +811,7 @@ app.post("/pf_grade-request", async function (req, res) {
 
     var spreadsheetId;
     var reciever;
+    var handlerName;
 
     const mappingSheetId = process.env.MAPPING_SHEET;
 
@@ -833,6 +819,7 @@ app.post("/pf_grade-request", async function (req, res) {
         auth, spreadsheetId: mappingSheetId, range: "Sheet1!L:N",
     });
 
+    handlerName = getNewRows.data.values[1][0];    
     reciever = getNewRows.data.values[1][1];
     spreadsheetId = getNewRows.data.values[1][2];
 
@@ -867,11 +854,11 @@ app.post("/pf_grade-request", async function (req, res) {
     await googleSheets.spreadsheets.values.append({
         auth,
         spreadsheetId,
-        range: "Sheet1!A:L",
+        range:  `${handlerName}!A:L`,
         valueInputOption: "USER_ENTERED",
         resource: {
             // values: [[userName, , batch, emailID, phoneNumber, programme, discipline, "Pass/Fail Certificate Request", rollNumber, , , joining_year, graduation_year, , , , , message, token, "Pending", currentDate + " | " + time, , reciever]],
-            values: [[userName, rollNumber, batch, "Pass/Fail Certificate Request", token, message, "Pending", currentDate + " | " + time, , , ,joining_year ,graduation_year , , , , , , emailID, phoneNumber, programme, discipline]],
+            values: [[userName,, batch, emailID, phoneNumber, programme, discipline, "Pass/Fail Certificate Request", rollNumber,,,joining_year,graduation_year,message, token, "Pending", currentDate + " | " + time,reciever]],
         },
     });
 
@@ -882,7 +869,7 @@ app.post("/pf_grade-request", async function (req, res) {
         valueInputOption: "USER_ENTERED",
         resource: {
             // values: [[userName, , batch, emailID, phoneNumber, programme, discipline, "Pass/Fail Certificate Request", rollNumber, , , , , joining_year, graduation_year, , , message, token, "Pending", currentDate + " | " + time, , reciever]],
-            values: [[userName, rollNumber, batch, "Pass/Fail Certificate Request", token, message, "Pending", currentDate + " | " + time, , , ,joining_year ,graduation_year , , , , , , emailID, phoneNumber, programme, discipline]],
+            values: [[userName,, batch, emailID, phoneNumber, programme, discipline, "Pass/Fail Certificate Request", rollNumber,,,joining_year,graduation_year,message, token, "Pending", currentDate + " | " + time,reciever]],
         },
     });
 
@@ -896,7 +883,7 @@ app.post("/pf_grade-request", async function (req, res) {
         });
 
         var mailOptions2 = {
-            from: "Academic Office<helpdesk.academics@iitgn.ac.in>",
+            from: "Academic Office<admin email id>",
             to: emailID,
             cc: process.env.EMAIL_ID,
             bcc: reciever,
@@ -919,34 +906,12 @@ app.post("/pf_grade-request", async function (req, res) {
     }
 });
 
-
-
 //Noc For Higher Studies
-app.post('/login', (req, res) => {
-    let token = req.body.token;
-
-    async function verify() {
-        const ticket = await client.verifyIdToken({
-            idToken: token,
-            audience: CLIENT_ID,  // Specify the CLIENT_ID of the app that accesses the backend
-        });
-        const payload = ticket.getPayload();
-        const userid = payload['sub'];
-    }
-    verify()
-        .then(() => {
-            res.cookie('session-token', token);
-            res.send('success')
-        })
-        .catch(console.error);
-
-});
-
 app.post("/noc_higherstudies-request", async function (req, res) {
     const { userName, emailID, phoneNumber, programme, discipline, rollNumber, batch, joining_year, graduation_year, message } = req.body;
 
     const auth = new google.auth.GoogleAuth({
-        keyFile: "credentials.json",
+        keyFile: "credentials2.json",
         scopes: "https://www.googleapis.com/auth/spreadsheets",
     });
 
@@ -960,6 +925,7 @@ app.post("/noc_higherstudies-request", async function (req, res) {
 
     var spreadsheetId;
     var reciever;
+    var handlerName;
 
     const mappingSheetId = process.env.MAPPING_SHEET;
 
@@ -967,6 +933,7 @@ app.post("/noc_higherstudies-request", async function (req, res) {
         auth, spreadsheetId: mappingSheetId, range: "Sheet1!L:N",
     });
 
+    handlerName = getNewRows.data.values[1][0];
     reciever = getNewRows.data.values[1][1];
     spreadsheetId = getNewRows.data.values[1][2];
 
@@ -1003,11 +970,11 @@ app.post("/noc_higherstudies-request", async function (req, res) {
     await googleSheets.spreadsheets.values.append({
         auth,
         spreadsheetId,
-        range: "Sheet1!A:L",
+        range: `${handlerName}!A:L`,
         valueInputOption: "USER_ENTERED",
         resource: {
             // values: [[userName, , batch, emailID, phoneNumber, programme, discipline, "NOC Higher Studies Request", rollNumber, , , joining_year, graduation_year, , , , , message, token, "Pending", currentDate + " | " + time, , reciever]],
-            values: [[userName, rollNumber, batch, "NOC Higher Studies Request", token, message, "Pending", currentDate + " | " + time, , , ,joining_year ,graduation_year , , , , , , emailID, phoneNumber, programme, discipline]],
+            values: [[userName,, batch, emailID, phoneNumber, programme, discipline, "NOC Higher Studies Request", rollNumber,,,joining_year,graduation_year,message, token, "Pending", currentDate + " | " + time,reciever]],
         },
     });
 
@@ -1018,7 +985,7 @@ app.post("/noc_higherstudies-request", async function (req, res) {
         valueInputOption: "USER_ENTERED",
         resource: {
             // values: [[userName, , batch, emailID, phoneNumber, programme, discipline, "NOC Higher Studies Request", rollNumber, , , joining_year, graduation_year, , , , , message, token, "Pending", currentDate + " | " + time, , reciever]],
-            values: [[userName, rollNumber, batch, "NOC Higher Studies Request", token, message, "Pending", currentDate + " | " + time, , , ,joining_year ,graduation_year , , , , , , emailID, phoneNumber, programme, discipline]],
+            values: [[userName,, batch, emailID, phoneNumber, programme, discipline, "NOC Higher Studies Request", rollNumber,,,joining_year,graduation_year,message, token, "Pending", currentDate + " | " + time,reciever]],
         },
     });
 
@@ -1032,7 +999,7 @@ app.post("/noc_higherstudies-request", async function (req, res) {
         });
 
         var mailOptions2 = {
-            from: "Academic Office<helpdesk.academics@iitgn.ac.in>",
+            from: "Academic Office<admin email id>",
             to: emailID,
             cc: process.env.EMAIL_ID,
             bcc: reciever,
@@ -1055,34 +1022,12 @@ app.post("/noc_higherstudies-request", async function (req, res) {
     }
 });
 
-
 //course completion
-
-app.post('/login', (req, res) => {
-    let token = req.body.token;
-
-    async function verify() {
-        const ticket = await client.verifyIdToken({
-            idToken: token,
-            audience: CLIENT_ID,  // Specify the CLIENT_ID of the app that accesses the backend
-        });
-        const payload = ticket.getPayload();
-        const userid = payload['sub'];
-    }
-    verify()
-        .then(() => {
-            res.cookie('session-token', token);
-            res.send('success')
-        })
-        .catch(console.error);
-
-});
-
 app.post("/course_completion-report", async function (req, res) {
     const { userName, emailID, phoneNumber, programme, batch, discipline, rollNumber, message } = req.body;
 
     const auth = new google.auth.GoogleAuth({
-        keyFile: "credentials.json",
+        keyFile: "credentials2.json",
         scopes: "https://www.googleapis.com/auth/spreadsheets",
     });
 
@@ -1094,6 +1039,7 @@ app.post("/course_completion-report", async function (req, res) {
         version: "v4", auth: client
     });
 
+    var handlerName;
     var spreadsheetId;
     var reciever;
 
@@ -1103,6 +1049,7 @@ app.post("/course_completion-report", async function (req, res) {
         auth, spreadsheetId: mappingSheetId, range: "Sheet1!L:N",
     });
 
+    handlerName = getNewRows.data.values[1][0];
     reciever = getNewRows.data.values[1][1];
     spreadsheetId = getNewRows.data.values[1][2];
 
@@ -1138,11 +1085,11 @@ app.post("/course_completion-report", async function (req, res) {
     await googleSheets.spreadsheets.values.append({
         auth,
         spreadsheetId,
-        range: "Sheet1!A:L",
+        range: `${handlerName}!A:L`,
         valueInputOption: "USER_ENTERED",
         resource: {
             // values: [[userName, , batch, emailID, phoneNumber, programme, discipline, "Course Completion Report", rollNumber, , , , , , , , , message, token, "Pending", currentDate + " | " + time, , reciever]],
-            values: [[userName, rollNumber, batch, "Course Completion Report", token, message, "Pending", currentDate + " | " + time, , , , , , , , , , , emailID, phoneNumber, programme, discipline]],
+            values: [[userName, , batch, emailID, phoneNumber, programme, discipline, "Course Completion Report", rollNumber,,,,, message, token, "Pending", currentDate + " | " + time, , reciever]],
         },
     });
 
@@ -1153,7 +1100,7 @@ app.post("/course_completion-report", async function (req, res) {
         valueInputOption: "USER_ENTERED",
         resource: {
             // values: [[userName, , batch, emailID, phoneNumber, programme, discipline, "Course Completion Report", rollNumber, , , , , , , , , message, token, "Pending", currentDate + " | " + time, , reciever]],
-            values: [[userName, rollNumber, batch, "Course Completion Report", token, message, "Pending", currentDate + " | " + time, , , , , , , , , , , emailID, phoneNumber, programme, discipline]],
+            values: [[userName, , batch, emailID, phoneNumber, programme, discipline, "Course Completion Report", rollNumber,,,,, message, token, "Pending", currentDate + " | " + time, , reciever]],
         },
     });
 
@@ -1167,7 +1114,7 @@ app.post("/course_completion-report", async function (req, res) {
         });
 
         var mailOptions2 = {
-            from: "Academic Office<helpdesk.academics@iitgn.ac.in>",
+            from: "Academic Office<admin email id>",
             to: emailID,
             cc: process.env.EMAIL_ID,
             bcc: reciever,
@@ -1191,31 +1138,11 @@ app.post("/course_completion-report", async function (req, res) {
 });
 
 //fees receipt
-app.post('/login', (req, res) => {
-    let token = req.body.token;
-
-    async function verify() {
-        const ticket = await client.verifyIdToken({
-            idToken: token,
-            audience: CLIENT_ID,  // Specify the CLIENT_ID of the app that accesses the backend
-        });
-        const payload = ticket.getPayload();
-        const userid = payload['sub'];
-    }
-    verify()
-        .then(() => {
-            res.cookie('session-token', token);
-            res.send('success')
-        })
-        .catch(console.error);
-
-});
-
 app.post("/fees_receipt-report", async function (req, res) {
     const { userName, rollNumber, phoneNumber, programme, batch, discipline, semester, message, emailID } = req.body;
 
     const auth = new google.auth.GoogleAuth({
-        keyFile: "credentials.json",
+        keyFile: "credentials2.json",
         scopes: "https://www.googleapis.com/auth/spreadsheets",
     });
 
@@ -1236,6 +1163,7 @@ app.post("/fees_receipt-report", async function (req, res) {
         auth, spreadsheetId: mappingSheetId, range: "Sheet1!L:N",
     });
 
+    handlerName = getNewRows.data.values[1][0];
     reciever = getNewRows.data.values[1][1];
     spreadsheetId = getNewRows.data.values[1][2];
 
@@ -1270,11 +1198,11 @@ app.post("/fees_receipt-report", async function (req, res) {
     await googleSheets.spreadsheets.values.append({
         auth,
         spreadsheetId,
-        range: "Sheet1!A:L",
+        range: `${handlerName}!A:L`,
         valueInputOption: "USER_ENTERED",
         resource: {
             // values: [[userName, semester, batch, emailID, phoneNumber, programme, discipline, "Fees Receipt Report", rollNumber, , , , , , , , , message, token, "Pending", currentDate + " | " + time,]],
-            values: [[userName, rollNumber, batch, "Fees Receipt Report", token, message, "Pending", currentDate + " | " + time, , , , , , , , , , semester, emailID, phoneNumber, programme, discipline]],
+            values: [[userName,semester, batch, emailID, phoneNumber, programme, discipline, "Fees Receipt Report", rollNumber,,,,, message, token, "Pending", currentDate + " | " + time, , reciever]],
         },
     });
 
@@ -1285,7 +1213,7 @@ app.post("/fees_receipt-report", async function (req, res) {
         valueInputOption: "USER_ENTERED",
         resource: {
             // values: [[userName, semester, batch, emailID, phoneNumber, programme, discipline, "Fees Receipt Report", rollNumber, , , , , , , , , message, token, "Pending", currentDate + " | " + time,]],
-            values: [[userName, rollNumber, batch, "Fees Receipt Report", token, message, "Pending", currentDate + " | " + time, , , , , , , , , ,semester , emailID, phoneNumber, programme, discipline]],
+            values: [[userName,semester, batch, emailID, phoneNumber, programme, discipline, "Fees Receipt Report", rollNumber,,,,, message, token, "Pending", currentDate + " | " + time, , reciever]],
         },
     });
 
@@ -1299,7 +1227,7 @@ app.post("/fees_receipt-report", async function (req, res) {
         });
 
         var mailOptions2 = {
-            from: "Academic Office<helpdesk.academics@iitgn.ac.in>",
+            from: "Academic Office<admin email id>",
             to: emailID,
             cc: process.env.EMAIL_ID,
             bcc: reciever,
@@ -1322,33 +1250,12 @@ app.post("/fees_receipt-report", async function (req, res) {
     }
 });
 
-
 // teaching assistant
-app.post('/login', (req, res) => {
-    let token = req.body.token;
-
-    async function verify() {
-        const ticket = await client.verifyIdToken({
-            idToken: token,
-            audience: CLIENT_ID,  // Specify the CLIENT_ID of the app that accesses the backend
-        });
-        const payload = ticket.getPayload();
-        const userid = payload['sub'];
-    }
-    verify()
-        .then(() => {
-            res.cookie('session-token', token);
-            res.send('success')
-        })
-        .catch(console.error);
-
-});
-
 app.post("/teaching_assistant-report", async function (req, res) {
     const { userName, emailID, phoneNumber, batch, programme, discipline, rollNumber, message } = req.body;
 
     const auth = new google.auth.GoogleAuth({
-        keyFile: "credentials.json",
+        keyFile: "credentials2.json",
         scopes: "https://www.googleapis.com/auth/spreadsheets",
     });
 
@@ -1360,6 +1267,7 @@ app.post("/teaching_assistant-report", async function (req, res) {
         version: "v4", auth: client
     });
 
+    var handlerName;
     var spreadsheetId;
     var reciever;
 
@@ -1369,6 +1277,7 @@ app.post("/teaching_assistant-report", async function (req, res) {
         auth, spreadsheetId: mappingSheetId, range: "Sheet1!L:N",
     });
 
+    handlerName = getNewRows.data.values[1][0];
     reciever = getNewRows.data.values[1][1];
     spreadsheetId = getNewRows.data.values[1][2];
 
@@ -1404,11 +1313,11 @@ app.post("/teaching_assistant-report", async function (req, res) {
     await googleSheets.spreadsheets.values.append({
         auth,
         spreadsheetId,
-        range: "Sheet1!A:L",
+        range: `${handlerName}!A:L`,
         valueInputOption: "USER_ENTERED",
         resource: {
             // values: [[userName, , batch, emailID, phoneNumber, programme, discipline, "Teaching Assistant Report", rollNumber, , , , , , , , , message, token, "Pending", currentDate + " | " + time, , reciever]],
-            values: [[userName, rollNumber, batch, "Teaching Assistant Report", token, message, "Pending", currentDate + " | " + time, , , , , , , , , , , emailID, phoneNumber, programme, discipline]],
+            values: [[userName, , batch, emailID, phoneNumber, programme, discipline, "Teaching Assistant Report", rollNumber, , , , , message, token, "Pending", currentDate + " | " + time, , reciever]],
         },
     });
 
@@ -1419,7 +1328,7 @@ app.post("/teaching_assistant-report", async function (req, res) {
         valueInputOption: "USER_ENTERED",
         resource: {
             // values: [[userName, , batch, emailID, phoneNumber, programme, discipline, "Teaching Assistant Report", rollNumber, , , , , , , , , message, token, "Pending", currentDate + " | " + time, , reciever]],
-            values: [[userName, rollNumber, batch, "Teaching Assistant Report", token, message, "Pending", currentDate + " | " + time, , , , , , , , , , , emailID, phoneNumber, programme, discipline]],
+            values: [[userName, , batch, emailID, phoneNumber, programme, discipline, "Teaching Assistant Report", rollNumber, , , , , message, token, "Pending", currentDate + " | " + time, , reciever]],
         },
     });
 
@@ -1433,7 +1342,7 @@ app.post("/teaching_assistant-report", async function (req, res) {
         });
 
         var mailOptions2 = {
-            from: "Academic Office<helpdesk.academics@iitgn.ac.in>",
+            from: "Academic Office<admin email id>",
             to: emailID,
             cc: process.env.EMAIL_ID,
             bcc: reciever,
@@ -1456,34 +1365,12 @@ app.post("/teaching_assistant-report", async function (req, res) {
     }
 });
 
-
 //provisional non- PhD
-
-app.post('/login', (req, res) => {
-    let token = req.body.token;
-
-    async function verify() {
-        const ticket = await client.verifyIdToken({
-            idToken: token,
-            audience: CLIENT_ID,  // Specify the CLIENT_ID of the app that accesses the backend
-        });
-        const payload = ticket.getPayload();
-        const userid = payload['sub'];
-    }
-    verify()
-        .then(() => {
-            res.cookie('session-token', token);
-            res.send('success')
-        })
-        .catch(console.error);
-
-});
-
 app.post("/provisional_nphd-request", async function (req, res) {
     const { userName, emailID, phoneNumber, programme, discipline, batch, rollNumber, defense_date, message } = req.body;
 
     const auth = new google.auth.GoogleAuth({
-        keyFile: "credentials.json",
+        keyFile: "credentials2.json",
         scopes: "https://www.googleapis.com/auth/spreadsheets",
     });
 
@@ -1497,13 +1384,14 @@ app.post("/provisional_nphd-request", async function (req, res) {
 
     var spreadsheetId;
     var reciever;
+    var handlerName;
 
     const mappingSheetId = process.env.MAPPING_SHEET;
 
     const getNewRows = await googleSheets.spreadsheets.values.get({
         auth, spreadsheetId: mappingSheetId, range: "Sheet1!L:N",
     });
-
+    handlerName = getNewRows.data.values[1][0];
     reciever = getNewRows.data.values[1][1];
     spreadsheetId = getNewRows.data.values[1][2];
 
@@ -1542,11 +1430,11 @@ app.post("/provisional_nphd-request", async function (req, res) {
     await googleSheets.spreadsheets.values.append({
         auth,
         spreadsheetId,
-        range: "Sheet1!A:L",
+        range: `${handlerName}!A:L`,
         valueInputOption: "USER_ENTERED",
         resource: {
             // values: [[userName, , batch, emailID, phoneNumber, programme, discipline, "Provisional Non-PhD Request", rollNumber, defense_date, , , , , , , , message, token, "Pending", currentDate + " | " + time, , reciever]],
-            values: [[userName, rollNumber, batch, "Provisional Non-PhD Request", token, message, "Pending", currentDate + " | " + time, , defense_date, , , , , , , , , emailID, phoneNumber, programme, discipline]],
+            values: [[userName, , batch, emailID, phoneNumber, programme, discipline, "Provisional Non-PhD Request", rollNumber, defense_date, , , , , message, token, "Pending", currentDate + " | " + time, , reciever]],
         },
     });
 
@@ -1557,7 +1445,7 @@ app.post("/provisional_nphd-request", async function (req, res) {
         valueInputOption: "USER_ENTERED",
         resource: {
             // values: [[userName, , batch, emailID, phoneNumber, programme, discipline, "Provisional Non-PhD Request", rollNumber, defense_date, , , , , , , , message, token, "Pending", currentDate + " | " + time, , reciever]],
-            values: [[userName, rollNumber, batch, "Provisional Non-PhD Request", token, message, "Pending", currentDate + " | " + time, , defense_date, , , , , , , , , emailID, phoneNumber, programme, discipline]],
+            values: [[userName, , batch, emailID, phoneNumber, programme, discipline, "Provisional Non-PhD Request", rollNumber, defense_date, , , , , message, token, "Pending", currentDate + " | " + time, , reciever]],
         },
     });
 
@@ -1570,7 +1458,7 @@ app.post("/provisional_nphd-request", async function (req, res) {
             }
         });
         var mailOptions2 = {
-            from: "Academic Office<helpdesk.academics@iitgn.ac.in>",
+            from: "Academic Office<admin email id>",
             to: emailID,
             cc: process.env.EMAIL_ID,
             bcc: reciever,
@@ -1594,31 +1482,11 @@ app.post("/provisional_nphd-request", async function (req, res) {
 });
 
 // English Proficiency
-app.post('/login', (req, res) => {
-    let token = req.body.token;
-
-    async function verify() {
-        const ticket = await client.verifyIdToken({
-            idToken: token,
-            audience: CLIENT_ID,  // Specify the CLIENT_ID of the app that accesses the backend
-        });
-        const payload = ticket.getPayload();
-        const userid = payload['sub'];
-    }
-    verify()
-        .then(() => {
-            res.cookie('session-token', token);
-            res.send('success')
-        })
-        .catch(console.error);
-
-});
-
 app.post("/english_proficiency-request", async function (req, res) {
     const { userName, emailID, phoneNumber, programme, discipline, batch, rollNumber, message } = req.body;
 
     const auth = new google.auth.GoogleAuth({
-        keyFile: "credentials.json",
+        keyFile: "credentials2.json",
         scopes: "https://www.googleapis.com/auth/spreadsheets",
     });
 
@@ -1629,7 +1497,7 @@ app.post("/english_proficiency-request", async function (req, res) {
     const googleSheets = google.sheets({
         version: "v4", auth: client
     });
-
+    var handlerName;
     var spreadsheetId;
     var reciever;
 
@@ -1639,6 +1507,7 @@ app.post("/english_proficiency-request", async function (req, res) {
         auth, spreadsheetId: mappingSheetId, range: "Sheet1!L:N",
     });
 
+    handlerName = getNewRows.data.values[1][0];
     reciever = getNewRows.data.values[1][1];
     spreadsheetId = getNewRows.data.values[1][2];
 
@@ -1676,11 +1545,11 @@ app.post("/english_proficiency-request", async function (req, res) {
     await googleSheets.spreadsheets.values.append({
         auth,
         spreadsheetId,
-        range: "Sheet1!A:L",
+        range: `${handlerName}!A:L`,
         valueInputOption: "USER_ENTERED",
         resource: {
             // values: [[userName, , batch, emailID, phoneNumber, programme, discipline, "English Proficiency Request", rollNumber, , , , , , , , , message, token, "Pending", currentDate + " | " + time, , reciever]],
-            values: [[userName, rollNumber, batch, "English Proficiency Request", token, message, "Pending", currentDate + " | " + time, , , , , , , , , , , emailID, phoneNumber, programme, discipline]],
+            values: [[userName, , batch, emailID, phoneNumber, programme, discipline, "English Proficiency Request", rollNumber, , , , , message, token, "Pending", currentDate + " | " + time, , reciever]],
         },
     });
 
@@ -1691,7 +1560,7 @@ app.post("/english_proficiency-request", async function (req, res) {
         valueInputOption: "USER_ENTERED",
         resource: {
             // values: [[userName, , batch, emailID, phoneNumber, programme, discipline, "English Proficiency Request", rollNumber, , , , , , , , , message, token, "Pending", currentDate + " | " + time, , reciever]],
-            values: [[userName, rollNumber, batch, "English Proficiency Request", token, message, "Pending", currentDate + " | " + time, , , , , , , , , , , emailID, phoneNumber, programme, discipline]],
+            values: [[userName, , batch, emailID, phoneNumber, programme, discipline, "English Proficiency Request", rollNumber, , , , , message, token, "Pending", currentDate + " | " + time, , reciever]],
         },
     });
 
@@ -1705,7 +1574,7 @@ app.post("/english_proficiency-request", async function (req, res) {
         });
 
         var mailOptions2 = {
-            from: "Academic Office<helpdesk.academics@iitgn.ac.in>",
+            from: "Academic Office<admin email id>",
             to: emailID,
             cc: process.env.EMAIL_ID,
             bcc: reciever,
@@ -1725,59 +1594,6 @@ app.post("/english_proficiency-request", async function (req, res) {
         });
     } else {
         res.render("incorrect_email")
-    }
-});
-
-// get request
-app.get('/request', checkAuthenticated, async (req, res) => {
-    let user = req.user;
-    //// console.log(user);
-
-    const auth = new google.auth.GoogleAuth({
-        keyFile: "credentials.json",
-        scopes: "https://www.googleapis.com/auth/spreadsheets",
-    });
-
-    // client instance for authentication
-    const client = await auth.getClient();
-
-    // instance of google sheets api
-    const googleSheets = google.sheets({
-        version: "v4", auth: client
-    });
-
-    const mappingSheetId = process.env.MAPPING_SHEET;
-    const getNewRows = await googleSheets.spreadsheets.values.get({
-        auth, spreadsheetId: mappingSheetId, range: "Sheet1!P:R",
-    });
-
-    // console.log(user.email);
-    // console.log(getNewRows.data.values);
-
-    var showDashboard = false;
-    if (user.email == process.env.EMAIL_ID) {
-        // console.log("here");
-        showDashboard = true;
-        var sheets = getNewRows.data.values;
-        sheets.shift();
-        sheets.shift();
-        res.render("dashboard", { user: user, sheets: sheets });
-    } else {
-        for (var i = 0; i < getNewRows.data.values.length; i++) {
-            if (getNewRows.data.values[i][0] == user.email) {
-                showDashboard = true;
-                res.render("dashboard", { user: user, sheet: getNewRows.data.values[i][2] });
-                break
-            }
-        }
-    }
-
-    if (user.email.includes("@iitgn.ac.in") && showDashboard == false) {
-        res.render("request_types", { user: user });
-    }
-    else if (showDashboard == false) {
-        // console.log("in else");
-        res.render("incorrect_email");
     }
 });
 
@@ -1826,8 +1642,9 @@ app.get('/fees_receipt-report', checkAuthenticated, (req, res) => {
 });
 
 app.get('/transcript-request', checkAuthenticated, (req, res) => {
+    console.log("fetching user");
     let user = req.user;
-    // console.log(user);
+    console.log(user);
     if (user.email.includes("@iitgn.ac.in")) {
         res.render("transcript", { user: user, error: "" });
     }
@@ -1940,32 +1757,6 @@ app.get('/logout', (req, res) => {
     res.redirect('/')
 
 })
-
-function checkAuthenticated(req, res, next) {
-
-    let token = req.cookies['session-token'];
-
-    let user = {};
-    async function verify() {
-        const ticket = await client.verifyIdToken({
-            idToken: token,
-            audience: CLIENT_ID,  // Specify the CLIENT_ID of the app that accesses the backend
-        });
-        const payload = ticket.getPayload();
-        user.name = payload.name;
-        user.email = payload.email;
-        user.picture = payload.picture;
-    }
-    verify()
-        .then(() => {
-            req.user = user;
-            next();
-        })
-        .catch(err => {
-            res.redirect('/')
-        })
-
-}
 
 app.listen(process.env.PORT || 3000, function () {
     console.log("Server started on port 3000");

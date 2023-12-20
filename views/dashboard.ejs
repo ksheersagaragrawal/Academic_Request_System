@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html>
-
 <head>
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -47,11 +46,10 @@
 				<div class='row text-nowrap'>
 					<div class="col-12 nopadding" id="allrequests">
 						<div style="height:5px;font-size:5px;">&nbsp;</div>
-                        <% if (user.email=="helpdesk.academics@iitgn.ac.in" ){ %>
+                        <% if (user.email=="put admin email id" ){ %>
                         <% sheets.forEach(function(sheet){ %>
                             <div class="clickable"
                                 onclick="document.getElementById('acad_frame_datasheet').src = '<%= sheet[2] %>'">
-
                                 <%= sheet[1] %>
                             </div>
                             <% }) %>
@@ -104,7 +102,7 @@
 	<div class='row text-nowrap'>
 
         <div class="col-12 nopadding" id="frame">
-            <% if (user.email!="helpdesk.academics@iitgn.ac.in" ){ %>
+            <% if (user.email!="put admin email id" ){ %>
                 <iframe class="responsive-iframe" id='frame_datasheet' src=<%=sheet %> ></iframe>
                 {%>
             <% } else{%>
