@@ -1,4 +1,4 @@
-# Academic_Request_System v1.0
+# Academic Request System v1.0
 A open source database system
 
 ## Overview
