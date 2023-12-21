@@ -50,16 +50,13 @@ The Academic Request System is a web-based application designed for college acad
   <img src="https://github.com/ksheersagaragrawal/Academic_Request_System/assets/76050795/dfc1689c-214b-424b-9587-9b77c85ba55d" alt="Admin Login" width="700">
 
 - **View and Manage Database:** Admins have full access to the academic member database.
-  <img src="https://github.com/ksheersagaragrawal/Academic_Request_System/assets/76050795/f89fd0d4-8c8c-4cac-a8d2-32f72de71bc2" alt="View Database" width="700">
-
-- **Closing Requests:** Facilitate the processing of requests by updating their status.
+  <img src="https://github.com/ksheersagaragrawal/Academic_Request_System/assets/76050795/1beae6d6-097d-4296-85e6-d57ea4ccf4fe" alt="Email Update" width="700">
+ 
+- **Closing Requests:** Process the requests by updating their status. Automated notifications are sent upon status changes.
   <img src="https://github.com/ksheersagaragrawal/Academic_Request_System/assets/76050795/034b1a40-4886-4187-af0c-fa428d7c3801" alt="Close Request" width="700">
 
-- **Status Update Notifications:** Automated notifications are sent upon status changes.
-  <img src="https://github.com/ksheersagaragrawal/Academic_Request_System/assets/76050795/1382e65b-5259-4e89-8785-da25f9bd022a" alt="Status Changed" width="700">
-
 - **Email Updates to Students:** Students receive email updates on the status of their requests.
-  <img src="https://github.com/ksheersagaragrawal/Academic_Request_System/assets/76050795/1beae6d6-097d-4296-85e6-d57ea4ccf4fe" alt="Email Update" width="700">
+  <img src="https://github.com/ksheersagaragrawal/Academic_Request_System/assets/76050795/1382e65b-5259-4e89-8785-da25f9bd022a" alt="Status Changed" width="700">
 
 ## Contributing
 Contributions to the project are welcome. Please follow the standard GitHub pull request process.
