@@ -1,5 +1,5 @@
 # Academic Request System v1.0
-A open source database system
+An open source database system
 
 ## Overview
 The Academic Request System is a web-based application designed for college academic offices. It streamlines the process of handling and managing various academic requests, such as transcript requests, grade reports, and more.
